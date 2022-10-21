@@ -7,6 +7,7 @@ public class Node<T> {
     private double w;
     private double h;
     private Node<T> opt_parent;
+    //当前节点锁存储的点数据，需要扩展成多个
     private Point<T> point;
     private NodeType nodetype = NodeType.EMPTY;
     private Node<T> nw;

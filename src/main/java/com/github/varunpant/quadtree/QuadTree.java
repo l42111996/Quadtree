@@ -58,7 +58,7 @@ public class QuadTree<T> {
 
     /**
      * Gets the value of the point at (x, y) or null if the point is empty.
-     *
+     * 获取 (x, y) 处的点的值，如果该点为空，则获取 null。
      * @param {double} x The x-coordinate.
      * @param {double} y The y-coordinate.
      * @param {T} opt_default The default value to return if the node doesn't
@@ -163,6 +163,15 @@ public class QuadTree<T> {
         return arr;
     }
 
+
+    /**
+     * 搜索一个范围外所有点集合
+     * @param xmin
+     * @param ymin
+     * @param xmax
+     * @param ymax
+     * @return
+     */
     public Point<T>[] searchIntersect(final double xmin, final double ymin, final double xmax, final double ymax) {
         final List<Point<T>> arr = new ArrayList<Point<T>>();
         this.navigate(this.root_, new Func<T>() {
@@ -180,6 +189,14 @@ public class QuadTree<T> {
         return arr.toArray((Point<T>[]) new Point[arr.size()]);
     }
 
+    /**
+     * 搜索一个范围内所有点集合
+     * @param xmin
+     * @param ymin
+     * @param xmax
+     * @param ymax
+     * @return
+     */
     public Point<T>[] searchWithin(final double xmin, final double ymin, final double xmax, final double ymax) {
         final List<Point<T>> arr = new ArrayList<Point<T>>();
         this.navigate(this.root_, new Func<T>() {
@@ -199,7 +216,7 @@ public class QuadTree<T> {
             case LEAF:
                 func.call(this, node);
                 break;
-
+            //如果是父节点则搜索判断所有叶子节点是否在范围内，如果在范围内递归查询
             case POINTER:
                 if (intersects(xmin, ymax, xmax, ymin, node.getNe()))
                     this.navigate(node.getNe(), func, xmin, ymin, xmax, ymax);
@@ -213,6 +230,16 @@ public class QuadTree<T> {
         }
     }
 
+
+    /**
+     * 判断 节点是否跟范围相交
+     * @param left
+     * @param bottom
+     * @param right
+     * @param top
+     * @param node
+     * @return
+     */
     private boolean intersects(double left, double bottom, double right, double top, Node<T> node) {
         return !(node.getX() > right ||
                 (node.getX() + node.getW()) < left ||
@@ -247,6 +274,7 @@ public class QuadTree<T> {
      * Traverses the tree depth-first, with quadrants being traversed in clockwise
      * order (NE, SE, SW, NW).  The provided function will be called for each
      * leaf node that is encountered.
+     * 深度优先遍历树，象限顺时针遍历 顺序（NE、SE、SW、NW）。 将为每个调用提供的函数 遇到的叶节点。
      * @param {QuadTree.Node} node The current node.
      * @param {function(QuadTree.Node)} fn The function to call
      *     for each leaf node. This function takes the node as an argument, and its
@@ -271,6 +299,7 @@ public class QuadTree<T> {
     /**
      * Finds a leaf node with the same (x, y) coordinates as the target point, or
      * null if no point exists.
+     * 找到与目标点具有相同 (x, y) 坐标的叶节点，或 如果不存在点，则为 null。
      * @param {QuadTree.Node} node The node to search in.
      * @param {number} x The x-coordinate of the point to search for.
      * @param {number} y The y-coordinate of the point to search for.
@@ -316,6 +345,7 @@ public class QuadTree<T> {
                 result = true;
                 break;
             case LEAF:
+                //如果xy坐标是同一个点，则进行覆盖操作 这里需要处理重复问题
                 if (parent.getPoint().getX() == point.getX() && parent.getPoint().getY() == point.getY()) {
                     this.setPointForNode(parent, point);
                     result = false;
@@ -338,7 +368,8 @@ public class QuadTree<T> {
     /**
      * Converts a leaf node to a pointer node and reinserts the node's point into
      * the correct child.
-     * @param {QuadTree.Node} node The node to split.
+     * 将叶子节点转换为父节点并将 节点的数据 重新插入到叶子节点中。
+     * @param {QuadTree.Node} node The node to split. 要拆分的节点。
      * @private
      */
     private void split(Node<T> node) {
@@ -363,6 +394,9 @@ public class QuadTree<T> {
     /**
      * Attempts to balance a node. A node will need balancing if all its children
      * are empty or it contains just one leaf.
+     *
+     * 尝试平衡节点。 如果一个节点的所有子节点都需要平衡 为空或仅包含一片叶子。
+     *
      * @param {QuadTree.Node} node The node to balance.
      * @private
      */
@@ -382,6 +416,7 @@ public class QuadTree<T> {
                 Node<T> se = node.getSe();
                 Node<T> firstLeaf = null;
 
+                //寻找第一个非空的孩子，如果有多个，那么我们  因为这个节点不能平衡而中断。
                 // Look for the first non-empty child, if there is more than one then we
                 // break as this node can't be balanced.
                 if (nw.getNodeType() != NodeType.EMPTY) {
@@ -415,11 +450,11 @@ public class QuadTree<T> {
                     node.setSe(null);
 
                 } else if (firstLeaf.getNodeType() == NodeType.POINTER) {
-                    // Only child was a pointer, therefore we can't rebalance.
+                    // Only child was a pointer, therefore we can't rebalance. 只有孩子是一个指针，因此我们不能重新平衡。
                     break;
 
                 } else {
-                    // Only child was a leaf: so update node's point and make it a leaf.
+                    // Only child was a leaf: so update node's point and make it a leaf. 唯一的孩子是一片叶子：所以更新节点的点并使其成为一片叶子。
                     node.setNodeType(NodeType.LEAF);
                     node.setNw(null);
                     node.setNe(null);
@@ -438,6 +473,7 @@ public class QuadTree<T> {
     }
 
     /**
+     * 根据插入的点找到应该插入的叶子节点
      * Returns the child quadrant within a node that contains the given (x, y)
      * coordinate.
      * @param {QuadTree.Node} parent The node.
@@ -459,6 +495,7 @@ public class QuadTree<T> {
 
     /**
      * Sets the point for a node, as long as the node is a leaf or empty.
+     * 设置节点的点，只要该节点是叶子或空的。
      * @param {QuadTree.Node} node The node to set the point for.
      * @param {QuadTree.Point} point The point to set.
      * @private

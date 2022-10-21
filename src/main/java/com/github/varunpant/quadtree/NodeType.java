@@ -5,7 +5,10 @@ package com.github.varunpant.quadtree;
  * @enum {number}
  */
 public enum NodeType {
+    /**空节点**/
     EMPTY,
+    /**叶子节点**/
     LEAF,
+    /**父节点**/
     POINTER
 }
